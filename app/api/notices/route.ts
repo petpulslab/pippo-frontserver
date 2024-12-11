@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const page = searchParams.get("page") || "1";
   const pageSize = searchParams.get("pageSize") || "20";
   const language = searchParams.get("language");
-
+  //
   try {
     const url = new URL(PIPPO_API);
     url.searchParams.set("tp", "notice");
