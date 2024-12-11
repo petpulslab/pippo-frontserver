@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import { Notice } from "@/lib/types";
 
 async function getNotices(page = 1, pageSize = 20) {
