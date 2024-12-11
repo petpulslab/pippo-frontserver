@@ -1,8 +1,13 @@
 import { Notice } from "@/lib/types";
 
 async function getNotices(page = 1, pageSize = 20) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/notices?page=${page}&pageSize=${pageSize}`
+    `${baseUrl}/api/notices?page=${page}&pageSize=${pageSize}`,
+    {
+      // Next.js 13+ 에서는 상대 경로 사용 가능
+      cache: "no-store", // 또는 필요에 따라 캐시 설정
+    }
   );
   if (!response.ok) {
     throw new Error("Failed to fetch notices");
