@@ -5,6 +5,9 @@ import type { NextRequest } from "next/server";
 
 const PIPPO_API = "http://pippo.petpuls.net/pippo/notice/ls";
 
+//요청 예시
+//http://localhost:3000/api/notices?page=1&pageSize=20&language=ko
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const page = searchParams.get("page") || "1";
@@ -30,7 +33,6 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     return NextResponse.json({
-      success: true,
       data,
       pagination: {
         currentPage: Number(page),
