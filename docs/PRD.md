@@ -2,11 +2,19 @@
 
 ## 1. 개요
 
-Next.js를 사용하여 Pippo 공지사항 API를 중계하는 프론트 서버 구축 문서입니다.
+Next.js 14와 App Router를 사용하여 Pippo 공지사항 API를 중계하고 음성 파일을 처리하는 프론트 서버 구축 문서입니다.
 
-## 2. API 명세
+## 2. 기술 스택
 
-### 기본 정보
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Shadcn/ui
+- FormData API
+
+## 3. API 명세
+
+### 3.1 공지사항 API
 
 - 원본 API: `http://pippo.petpuls.net/pippo/notice/ls`
 - 파라미터:
@@ -15,226 +23,59 @@ Next.js를 사용하여 Pippo 공지사항 API를 중계하는 프론트 서버 
   - rs: 페이지 크기
   - lang: 언어 코드 (선택)
 
-### 프론트 서버 API
+### 3.2 음성 파일 업로드 API
 
-```typescript
-// 타입 정의
-interface Notice {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-}
+- 엔드포인트: `https://pippo.petpuls.net/emo/v1/analysis/request`
+- 메소드: POST
+- Content-Type: multipart/form-data
+- 요청 파라미터:
+  - bark_file: WAV 형식 음성 파일
+- 파일명 형식: `YYYY-MM-DD_HH-mm-ss.wav`
 
-interface NoticeResponse {
-  success: boolean;
-  data: {
-    items: Notice[];
-    totalCount: number;
-    currentPage: number;
-    totalPages: number;
-  };
-  pagination: {
-    currentPage: number;
-    pageSize: number;
-  };
-}
+## 4. 파일 업로드 요구사항
 
-interface ErrorResponse {
-  success: false;
-  error: string;
-  details?: string;
-}
-```
+### 4.1 기능 요구사항
 
-## 3. 구현 코드
+- WAV 파일 수신 및 처리
+- API 서버로 파일 전송
+- 업로드 상태 모니터링
+- 응답 처리 및 에러 핸들링
 
-### API 라우트 구현
+### 4.2 기술 요구사항
 
-```typescript
-// pages/api/notices.ts
-import { NextApiRequest, NextApiResponse } from "next";
+- multipart/form-data 형식 지원
+- 파일 유효성 검사
+- 타임스탬프 기반 파일명 생성
+- 비동기 파일 전송 처리
 
-const PIPPO_API = "http://pippo.petpuls.net/pippo/notice/ls";
+## 5. 스타일링
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const { page = 1, pageSize = 20, language } = req.query;
-
-  try {
-    const url = new URL(PIPPO_API);
-    url.searchParams.set("tp", "notice");
-    url.searchParams.set("pn", String(page));
-    url.searchParams.set("rs", String(pageSize));
-
-    if (language) {
-      url.searchParams.set("lang", String(language));
-    }
-
-    const response = await fetch(url.toString());
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    res.status(200).json({
-      success: true,
-      data,
-      pagination: {
-        currentPage: Number(page),
-        pageSize: Number(pageSize),
-      },
-    });
-  } catch (error) {
-    console.error("Notice API Error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to fetch notices",
-      details:
-        process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-}
-```
-
-### 환경 변수 설정
-
-```env
-PIPPO_API_BASE_URL=http://pippo.petpuls.net/pippo
-NODE_ENV=development
-```
-
-## 4. 프로젝트 설정
-
-### package.json
-
-```json
-{
-  "name": "pippo-notice-frontend",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
-  "dependencies": {
-    "next": "^13.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^16.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "typescript": "^4.8.0"
-  }
-}
-```
-
-### tsconfig.json
-
-```json
-{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
-}
-```
-
-## 5. API 사용 예시
-
-### 기본 호출
-
-```typescript
-const getNotices = async () => {
-  const response = await fetch("/api/notices");
-  const data = await response.json();
-  return data;
-};
-```
-
-### 페이지네이션 사용
-
-```typescript
-const getNoticesWithPagination = async (page: number, pageSize: number) => {
-  const response = await fetch(
-    `/api/notices?page=${page}&pageSize=${pageSize}`
-  );
-  const data = await response.json();
-  return data;
-};
-```
-
-### 다국어 지원
-
-```typescript
-const getNoticesWithLanguage = async (language: string) => {
-  const response = await fetch(`/api/notices?language=${language}`);
-  const data = await response.json();
-  return data;
-};
-```
+- Tailwind CSS를 기본 스타일링 도구로 사용
+- Shadcn/ui 컴포넌트 라이브러리 활용
+- GeistVF, GeistMonoVF 폰트 사용
 
 ## 6. 에러 처리
 
-### 에러 코드 및 대응
+### 6.1 에러 코드 및 대응
 
 - 400: 잘못된 요청 파라미터
 - 404: 리소스를 찾을 수 없음
+- 413: 파일 크기 초과
+- 415: 지원하지 않는 파일 형식
 - 500: 서버 내부 오류
 
-### 에러 처리 예시
+### 6.2 파일 업로드 관련 검증
 
-```typescript
-const getNotices = async () => {
-  try {
-    const response = await fetch("/api/notices");
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Failed to fetch notices:", error);
-    throw error;
-  }
-};
-```
+- 파일 형식: WAV 파일만 허용
+- 파일 크기: 최대 10MB로 제한
+- 파일명: 특수문자 제거 및 타임스탬프 추가
 
 ## 7. 배포 체크리스트
 
 - [ ] 환경 변수 설정 확인
 - [ ] TypeScript 컴파일 확인
 - [ ] API 엔드포인트 테스트
+- [ ] 파일 업로드 기능 테스트
 - [ ] 에러 핸들링 테스트
 - [ ] CORS 설정 확인
 - [ ] 빌드 테스트
