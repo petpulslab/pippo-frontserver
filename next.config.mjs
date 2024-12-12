@@ -19,6 +19,12 @@ const nextConfig = {
       },
     ];
   },
+  experimental: {
+    allowMiddlewareResponseBody: true,
+  },
+  images: {
+    domains: ["pippo.petpuls.net"],
+  },
 };
 
 export default nextConfig;
