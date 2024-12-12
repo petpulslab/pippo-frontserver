@@ -32,13 +32,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    return NextResponse.json({
-      data,
-      pagination: {
-        currentPage: Number(page),
-        pageSize: Number(pageSize),
-      },
-    });
+    return NextResponse.json(data);
   } catch (error) {
     const err = error as Error;
     console.error("Notice API Error:", err);
