@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
 interface AnalysisResult {
   data: {
     content: {
@@ -17,7 +16,12 @@ export async function GET(request: NextRequest) {
     if (!userToken) {
       return NextResponse.json(
         { success: false, error: "인증 토큰이 필요합니다." },
-        { status: 401 }
+        {
+          status: 401,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        }
       );
     }
 
@@ -27,6 +31,8 @@ export async function GET(request: NextRequest) {
         headers: {
           "X-User-Token": userToken,
         },
+        cache: "no-store",
+        next: { revalidate: 0 },
       }
     );
 
@@ -36,7 +42,11 @@ export async function GET(request: NextRequest) {
 
     const result: AnalysisResult = await response.json();
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    });
   } catch (error) {
     console.error("감정 분석 결과 조회 오류:", error);
     return NextResponse.json(
@@ -44,7 +54,12 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "감정 분석 결과를 조회하는 중 오류가 발생했습니다.",
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      }
     );
   }
 }
