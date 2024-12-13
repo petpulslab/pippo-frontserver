@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     console.log("Calling Pippo API with token:", userToken);
 
     const response = await fetch(
-      "http://pippo.petpuls.net/emo/v1/analysis/result",
+      "http://pippo.petpuls.net/emo/v1/analysis/results?pg=0",
       {
         method: "GET",
         headers: {
